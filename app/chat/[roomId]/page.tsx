@@ -28,7 +28,12 @@ export default function ChatPage({ params }: ChatPageProps) {
     const socket = getSocket();
     socketRef.current = socket;
 
-    socket.connect();
+    // Initialize socket connection for Vercel
+    if (typeof window !== 'undefined') {
+      fetch('/api/socket').finally(() => {
+        socket.connect();
+      });
+    }
 
     socket.on('connect', () => {
       setIsConnected(true);

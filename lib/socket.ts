@@ -4,14 +4,20 @@ let socket: Socket | null = null;
 
 export const initSocket = () => {
   if (!socket) {
-    const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL ||
-      (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001');
+    // For production, use current domain with socket path
+    // For development, use custom server
+    const isDev = process.env.NODE_ENV === 'development';
+    const serverUrl = isDev
+      ? 'http://localhost:3001'
+      : (typeof window !== 'undefined' ? window.location.origin : '');
 
     socket = io(serverUrl, {
+      path: isDev ? '/socket.io/' : '/api/socket',
       autoConnect: false,
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       timeout: 20000,
-      forceNew: true
+      upgrade: true,
+      rememberUpgrade: false
     });
   }
   return socket;
