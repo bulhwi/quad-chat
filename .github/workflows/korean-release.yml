@@ -1,0 +1,55 @@
+name: 🇰🇷 한국어 릴리즈 노트 자동 생성
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  korean-release:
+    name: 한국어 릴리즈 노트 생성 및 배포
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 코드 체크아웃
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔧 Node.js 18 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📦 의존성 설치
+        run: npm ci
+
+      - name: 🏷️ 태그 정보 추출
+        id: tag
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+
+      - name: 📝 한국어 릴리즈 노트 생성
+        id: release_notes
+        run: |
+          node scripts/generate-korean-release.js ${{ steps.tag.outputs.tag }}
+
+      - name: 🚀 GitHub 릴리즈 생성
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          release_name: 🚀 Quad Chat ${{ steps.tag.outputs.tag }}
+          body_path: ./release-notes-ko.md
+          draft: false
+          prerelease: false
+
+      - name: 📢 슬랙 알림 (선택사항)
+        if: success()
+        run: |
+          echo "✅ ${{ steps.tag.outputs.tag }} 버전이 성공적으로 릴리즈되었습니다!"
+          echo "🔗 릴리즈 페이지: https://github.com/bulhwi/quad-chat/releases/tag/${{ steps.tag.outputs.tag }}"
