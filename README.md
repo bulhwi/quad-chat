@@ -3,6 +3,8 @@
 > 최대 4명까지 참여 가능한 크로스 플랫폼 실시간 채팅 서비스
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-quad--chat.vercel.app-blue?style=for-the-badge)](https://quad-chat.vercel.app)
+[![Version](https://img.shields.io/badge/Version-v1.0.1-green?style=for-the-badge)](https://github.com/bulhwi/quad-chat/releases/tag/v1.0.1)
+[![Korean Release Notes](https://img.shields.io/badge/한국어%20릴리즈%20노트-자동화-red?style=for-the-badge)](https://github.com/bulhwi/quad-chat/releases)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fbulhwi%2Fquad-chat)
 
 ## ✨ 주요 기능
@@ -350,13 +352,15 @@ quad-chat/
 │   ├── 📄 redis.ts               # Redis 연결 및 데이터 관리
 │   ├── 📄 api.ts                 # HTTP 클라이언트
 │   └── 📄 socket.ts              # Socket.io (로컬 개발용)
-├── 📁 types/                      # TypeScript 타입 정의
-│   ├── 📄 chat.ts                # 채팅 관련 타입
-│   └── 📄 socket.ts              # Socket.io 타입
 ├── 📁 .github/workflows/          # GitHub Actions
-│   └── 📄 deploy.yml             # 자동 배포 워크플로우
+│   └── 📄 korean-release.yml     # 🇰🇷 한국어 릴리즈 노트 자동화
+├── 📁 scripts/                    # 자동화 스크립트
+│   └── 📄 generate-korean-release.js # 한국어 릴리즈 노트 생성기
+├── 📁 docs/                       # 프로젝트 문서
+│   └── 📄 VERSIONING.md          # 버전 관리 가이드라인
+├── 📄 CHANGELOG.md               # 🇰🇷 한국어 변경사항 기록
 ├── 📄 server.js                   # 로컬 개발용 커스텀 서버
-├── 📄 package.json               # 프로젝트 설정
+├── 📄 package.json               # 프로젝트 설정 (v1.0.1)
 ├── 📄 tailwind.config.ts         # Tailwind CSS 설정
 ├── 📄 tsconfig.json              # TypeScript 설정
 └── 📄 next.config.js             # Next.js 설정
@@ -371,6 +375,10 @@ quad-chat/
 | `pages/api/rooms/[roomId].js` | REST API: 방 관리, 메시지 송수신 |
 | `lib/redis.ts` | Redis 연결: 데이터 저장/조회 관리 |
 | `lib/api.ts` | HTTP 클라이언트: API 호출 관리 |
+| `CHANGELOG.md` | 🇰🇷 한국어 변경사항 기록 및 릴리즈 히스토리 |
+| `.github/workflows/korean-release.yml` | 🤖 한국어 릴리즈 노트 자동화 워크플로우 |
+| `scripts/generate-korean-release.js` | 한국어 릴리즈 노트 생성 스크립트 |
+| `docs/VERSIONING.md` | Semantic Versioning 가이드라인 |
 | `server.js` | 로컬 개발 서버: Socket.io + Next.js (로컬용) |
 
 ## 🛠️ 개발 스크립트
@@ -395,7 +403,16 @@ npm update           # 의존성 업데이트
 
 ## 🚀 개발 워크플로우
 
-### 🔄 일반적인 개발 과정
+### 🔄 개발 및 릴리즈 프로세스
+
+#### 📋 브랜치 전략
+```bash
+# main - 프로덕션 안정 버전
+# develop - 개발 통합 브랜치
+# feature/* - 기능별 개발 브랜치
+```
+
+#### 🛠️ 일반적인 개발 과정
 
 ```bash
 # 1. 저장소 클론
@@ -405,21 +422,66 @@ cd quad-chat
 # 2. 의존성 설치
 npm install
 
-# 3. 개발 서버 실행
+# 3. 기능 브랜치 생성
+git checkout develop
+git checkout -b feature/new-feature
+
+# 4. 개발 서버 실행
 npm run dev
 
-# 4. 코드 수정 및 테스트
+# 5. 코드 수정 및 테스트
 # http://localhost:3001에서 실시간 확인
 
-# 5. 빌드 테스트
+# 6. 빌드 테스트
 npm run build
 
-# 6. 변경사항 커밋
+# 7. 변경사항 커밋
 git add .
 git commit -m "feat: 새로운 기능 추가"
 
-# 7. GitHub에 푸시 (자동 배포)
-git push origin main
+# 8. develop 브랜치로 PR 생성
+git push origin feature/new-feature
+# GitHub에서 feature/* → develop PR 생성
+
+# 9. develop에서 테스트 후 main으로 릴리즈 PR
+# develop → main PR 생성 및 머지
+
+# 10. 릴리즈 태그 생성 (자동 릴리즈 노트 생성)
+git checkout main
+git pull origin main
+git tag v1.x.x -m "릴리즈 메시지"
+git push origin v1.x.x
+```
+
+### 🏷️ 버전 관리 시스템
+
+#### Semantic Versioning (SemVer)
+- **MAJOR** (1.0.0 → 2.0.0): 호환성 중단 변경사항
+- **MINOR** (1.0.0 → 1.1.0): 새로운 기능 추가 (하위 호환)
+- **PATCH** (1.0.0 → 1.0.1): 버그 수정 및 성능 개선
+
+#### 🇰🇷 한국어 릴리즈 노트 자동화
+```bash
+# 태그 푸시 시 자동 실행되는 GitHub Actions
+git tag v1.1.0 -m "이모티콘 기능 추가"
+git push origin v1.1.0
+
+# ↓ 자동으로 실행됨
+# 1. CHANGELOG.md에서 변경사항 추출
+# 2. 한국어 친화적 릴리즈 노트 생성
+# 3. GitHub Release 자동 생성
+# 4. 한국어 우선 정책 적용
+```
+
+#### 📝 CHANGELOG.md 관리
+```bash
+# 기능 개발 완료 시 CHANGELOG.md 업데이트
+## [미배포] - Unreleased
+### 추가됨
+- 새로운 기능 설명
+
+# 릴리즈 시 버전과 날짜 업데이트
+## [1.1.0] - 2025-09-28 - ✨ 새로운 기능
 ```
 
 ### 🔧 개발 환경 설정
@@ -433,6 +495,53 @@ git push origin main
 #### 필수 Node.js 버전
 - **Node.js**: 20.x 이상
 - **npm**: 10.x 이상
+
+## 🇰🇷 한국어 우선 릴리즈 시스템
+
+### ✨ 특징
+- **한국어 우선 정책**: 모든 릴리즈 노트는 한국어로 먼저 작성
+- **사용자 친화적**: 기술 용어보다 일반 사용자가 이해하기 쉬운 표현
+- **자동화**: GitHub Actions를 통한 완전 자동화
+- **Semantic Versioning**: 버전별 이모지와 친화적 제목 자동 생성
+
+### 📋 한국어 기술 용어 표준화
+| 영어 용어 | 한국어 용어 |
+|----------|-----------|
+| Breaking Changes | 호환성 중단 변경사항 |
+| Migration | 업그레이드 방법 |
+| Deprecated | 사용 중단 예정 |
+| Performance | 성능 최적화 |
+| Security | 보안 강화 |
+| Bug Fix | 오류 수정 |
+
+### 🎯 릴리즈 노트 예시
+```markdown
+# 🐛 Quad Chat v1.0.1 - 버그 수정 및 개선
+
+안녕하세요! Quad Chat의 새로운 업데이트가 출시되었습니다! 🎉
+
+## 🔧 수정사항
+- GitHub Actions 권한 문제 해결
+- 릴리즈 자동화 개선
+- 워크플로우 안정성 향상
+
+## 🔄 업그레이드 방법
+별도 작업 없이 자동으로 업데이트됩니다. 브라우저를 새로고침하면 새 기능을 사용할 수 있어요!
+```
+
+### 🔧 수동 릴리즈 노트 생성
+```bash
+# 로컬에서 릴리즈 노트 미리보기
+node scripts/generate-korean-release.js v1.1.0
+
+# 생성된 release-notes-ko.md 파일 확인
+cat release-notes-ko.md
+```
+
+### 📖 관련 문서
+- [`CHANGELOG.md`](./CHANGELOG.md): 한국어 변경사항 기록
+- [`docs/VERSIONING.md`](./docs/VERSIONING.md): 버전 관리 가이드라인
+- [GitHub Releases](https://github.com/bulhwi/quad-chat/releases): 모든 릴리즈 목록
 
 ## 📚 추가 자료
 
