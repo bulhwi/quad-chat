@@ -56,7 +56,7 @@ const API_BASE = process.env.NODE_ENV === 'development'
 export class ChatAPI {
   // 6-1. 방 입장 API
   static async joinRoom(roomId: string, nickname: string): Promise<JoinRoomResponse> {
-    const response = await fetch(`${API_BASE}/api/rooms/${roomId}`, {
+    const response = await fetch(`${API_BASE}/api/chat/rooms/${roomId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ export class ChatAPI {
 
   // 6-2. 방 데이터 조회 API (폴링용)
   static async getRoomData(roomId: string): Promise<Room> {
-    const response = await fetch(`${API_BASE}/api/rooms/${roomId}`, {
+    const response = await fetch(`${API_BASE}/api/chat/rooms/${roomId}`, {
       method: 'GET',
     });
 
@@ -90,8 +90,8 @@ export class ChatAPI {
   }
 
   // 6-3. 메시지 전송 API
-  static async sendMessage(roomId: string, userId: string, message: string): Promise<SendMessageResponse> {
-    const response = await fetch(`${API_BASE}/api/rooms/${roomId}`, {
+  static async sendMessage(roomId: string, message: string, userId: string): Promise<SendMessageResponse> {
+    const response = await fetch(`${API_BASE}/api/chat/rooms/${roomId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -112,7 +112,7 @@ export class ChatAPI {
 
   // 6-4. 방 나가기 API
   static async leaveRoom(roomId: string, userId: string): Promise<LeaveRoomResponse> {
-    const response = await fetch(`${API_BASE}/api/rooms/${roomId}`, {
+    const response = await fetch(`${API_BASE}/api/chat/rooms/${roomId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
