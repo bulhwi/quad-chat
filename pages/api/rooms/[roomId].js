@@ -1,10 +1,6 @@
-// API for room management
-const MAX_USERS_PER_ROOM = 4;
+import { getRoomData, addUserToRoom, addMessageToRoom, removeUserFromRoom } from '../../../lib/redis';
 
-// In-memory storage (in production, use a database)
-let rooms = new Map();
-
-export default function handler(req, res) {
+export default async function handler(req, res) {
   const { roomId } = req.query;
   const { method } = req;
 
@@ -18,99 +14,84 @@ export default function handler(req, res) {
     return;
   }
 
-  switch (method) {
-    case 'GET':
-      // Get room info and messages
-      const room = rooms.get(roomId) || { users: [], messages: [] };
-      res.status(200).json(room);
-      break;
+  try {
+    switch (method) {
+      case 'GET':
+        // Get room info and messages
+        const roomData = await getRoomData(roomId);
+        res.status(200).json(roomData);
+        break;
 
-    case 'POST':
-      // Join room
-      const { nickname, action } = req.body;
+      case 'POST':
+        // Join room
+        const { nickname, action } = req.body;
 
-      if (action === 'join') {
-        let room = rooms.get(roomId) || { users: [], messages: [] };
+        if (action === 'join') {
+          const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          const result = await addUserToRoom(roomId, userId, nickname);
 
-        if (room.users.length >= MAX_USERS_PER_ROOM) {
-          res.status(400).json({ error: 'Room is full' });
+          if (!result.success) {
+            res.status(400).json({ error: result.error });
+            return;
+          }
+
+          res.status(200).json({
+            success: true,
+            userId,
+            room: {
+              users: result.room.users,
+              userCount: result.room.users.length
+            }
+          });
+        } else {
+          res.status(400).json({ error: 'Invalid action' });
+        }
+        break;
+
+      case 'PUT':
+        // Send message
+        const { message, userId } = req.body;
+
+        if (!message || !userId) {
+          res.status(400).json({ error: 'Message and userId are required' });
           return;
         }
 
-        const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const newUser = {
-          id: userId,
-          nickname: nickname || `User${Math.floor(Math.random() * 1000)}`,
-          joinedAt: new Date()
-        };
+        const messageResult = await addMessageToRoom(roomId, userId, message);
 
-        room.users.push(newUser);
-        rooms.set(roomId, room);
+        if (!messageResult.success) {
+          res.status(403).json({ error: messageResult.error });
+          return;
+        }
 
         res.status(200).json({
           success: true,
-          userId,
-          room: {
-            users: room.users,
-            userCount: room.users.length
-          }
+          message: messageResult.message
         });
-      }
-      break;
+        break;
 
-    case 'PUT':
-      // Send message
-      const { message, userId } = req.body;
-      let targetRoom = rooms.get(roomId);
+      case 'DELETE':
+        // Leave room
+        const { userId: leavingUserId } = req.body;
 
-      if (!targetRoom) {
-        res.status(404).json({ error: 'Room not found' });
-        return;
-      }
-
-      const user = targetRoom.users.find(u => u.id === userId);
-      if (!user) {
-        res.status(403).json({ error: 'User not in room' });
-        return;
-      }
-
-      const messageData = {
-        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        userId,
-        nickname: user.nickname,
-        message,
-        timestamp: new Date()
-      };
-
-      targetRoom.messages.push(messageData);
-      if (targetRoom.messages.length > 100) {
-        targetRoom.messages.shift();
-      }
-
-      rooms.set(roomId, targetRoom);
-      res.status(200).json({ success: true, message: messageData });
-      break;
-
-    case 'DELETE':
-      // Leave room
-      const { userId: leavingUserId } = req.body;
-      let roomToLeave = rooms.get(roomId);
-
-      if (roomToLeave) {
-        roomToLeave.users = roomToLeave.users.filter(u => u.id !== leavingUserId);
-
-        if (roomToLeave.users.length === 0) {
-          rooms.delete(roomId);
-        } else {
-          rooms.set(roomId, roomToLeave);
+        if (!leavingUserId) {
+          res.status(400).json({ error: 'userId is required' });
+          return;
         }
-      }
 
-      res.status(200).json({ success: true });
-      break;
+        await removeUserFromRoom(roomId, leavingUserId);
+        res.status(200).json({ success: true });
+        break;
 
-    default:
-      res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
-      res.status(405).end(`Method ${method} Not Allowed`);
+      default:
+        res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
+        res.status(405).end(`Method ${method} Not Allowed`);
+    }
+  } catch (error) {
+    console.error('API Error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 }
