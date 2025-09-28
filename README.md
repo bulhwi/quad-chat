@@ -577,6 +577,7 @@ cat release-notes-ko.md
 
 **박불휘 (bulhwi)**
 - GitHub: [@bulhwi](https://github.com/bulhwi)
+- 🧪 Admin 권한 테스트 완료: CLI를 통한 PR 머지 가능
 - 프로젝트: [quad-chat](https://github.com/bulhwi/quad-chat)
 
 ---
