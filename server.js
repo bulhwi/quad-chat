@@ -23,6 +23,7 @@ app.prepare().then(() => {
 
   server.listen(port, (err) => {
     if (err) throw err;
-    console.log(`> Ready on http://${hostname}:${port}`);
+    console.log(`> 🚀 Quad Chat development server ready on http://${hostname}:${port}`);
+    console.log(`> 📡 HTTP Polling mode enabled for real-time chat`);
   });
 });
