@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRoomData, addUserToRoom, addMessageToRoom, removeUserFromRoom } from '@/lib/redis-mock';
+import { getRoomData, addUserToRoom, addMessageToRoom, removeUserFromRoom } from '@/lib/redis';
 
 interface RouteParams {
   params: Promise<{ roomId: string }>;
