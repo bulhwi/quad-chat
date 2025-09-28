@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useRef, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { getSocket } from '@/lib/socket';
-import { User, Message } from '@/types/chat';
+import { ChatAPI, Room } from '@/lib/api';
 
 interface ChatPageProps {
   params: Promise<{ roomId: string }>;
@@ -15,74 +14,92 @@ export default function ChatPage({ params }: ChatPageProps) {
   const searchParams = useSearchParams();
   const nickname = searchParams?.get('nickname') || 'Anonymous';
 
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Room['messages']>([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<Room['users']>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [isRoomFull, setIsRoomFull] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [userId, setUserId] = useState<string>('');
+  const [error, setError] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const socketRef = useRef<ReturnType<typeof getSocket> | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Join room on mount
   useEffect(() => {
-    const socket = getSocket();
-    socketRef.current = socket;
+    const joinRoom = async () => {
+      try {
+        const response = await ChatAPI.joinRoom(roomId, nickname);
+        setUserId(response.userId);
+        setUsers(response.room.users);
+        setIsConnected(true);
+        setError('');
 
-    // Initialize socket connection for Vercel
-    if (typeof window !== 'undefined') {
-      fetch('/api/socket').finally(() => {
-        socket.connect();
-      });
-    }
+        // Start polling for updates
+        startPolling();
+      } catch (error: unknown) {
+        console.error('Failed to join room:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        if (errorMessage.includes('full')) {
+          setIsRoomFull(true);
+        } else {
+          setError(errorMessage);
+        }
+      }
+    };
 
-    socket.on('connect', () => {
-      setIsConnected(true);
-      socket.emit('join-room', { roomId, nickname });
-    });
-
-    socket.on('room-full', () => {
-      setIsRoomFull(true);
-      alert('방이 가득 찼습니다. (최대 4명)');
-      router.push('/');
-    });
-
-    socket.on('user-joined', ({ users: updatedUsers }) => {
-      setUsers(updatedUsers);
-    });
-
-    socket.on('user-left', ({ users: updatedUsers }) => {
-      setUsers(updatedUsers);
-    });
-
-    socket.on('previous-messages', (previousMessages: Message[]) => {
-      setMessages(previousMessages);
-    });
-
-    socket.on('receive-message', (message: Message) => {
-      setMessages(prev => [...prev, message]);
-    });
-
-    socket.on('disconnect', () => {
-      setIsConnected(false);
-    });
+    joinRoom();
 
     return () => {
-      socket.disconnect();
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
     };
-  }, [roomId, nickname, router]);
+  }, [roomId, nickname]);
+
+  // Cleanup when component unmounts
+  useEffect(() => {
+    return () => {
+      if (userId) {
+        ChatAPI.leaveRoom(roomId, userId).catch(console.error);
+      }
+    };
+  }, [userId, roomId]);
+
+  const startPolling = () => {
+    // Poll for room updates every 1 second
+    pollingIntervalRef.current = setInterval(async () => {
+      try {
+        const roomData = await ChatAPI.getRoomData(roomId);
+        setUsers(roomData.users);
+        setMessages(roomData.messages);
+        setIsConnected(true);
+      } catch (error) {
+        console.error('Polling error:', error);
+        setIsConnected(false);
+      }
+    }, 1000);
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const sendMessage = () => {
-    if (!inputMessage.trim() || !socketRef.current) return;
+  const sendMessage = async () => {
+    if (!inputMessage.trim() || !userId) return;
 
-    socketRef.current.emit('send-message', {
-      message: inputMessage,
-      roomId
-    });
-    setInputMessage('');
+    try {
+      await ChatAPI.sendMessage(roomId, userId, inputMessage);
+      setInputMessage('');
+      setError('');
+
+      // Immediately fetch latest messages
+      const roomData = await ChatAPI.getRoomData(roomId);
+      setMessages(roomData.messages);
+    } catch (error: unknown) {
+      console.error('Failed to send message:', error);
+      setError('메시지 전송에 실패했습니다.');
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -97,21 +114,41 @@ export default function ChatPage({ params }: ChatPageProps) {
     alert(`방 코드 '${roomId}'가 복사되었습니다!`);
   };
 
-  const leaveRoom = () => {
+  const leaveRoom = async () => {
     if (confirm('방을 나가시겠습니까?')) {
+      if (userId) {
+        await ChatAPI.leaveRoom(roomId, userId);
+      }
       router.push('/');
     }
   };
 
   if (isRoomFull) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="text-center p-8 bg-white rounded-lg shadow-lg">
-          <h2 className="text-2xl font-bold mb-4">방이 가득 찼습니다</h2>
-          <p className="mb-4">최대 4명까지만 입장 가능합니다.</p>
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+        <div className="text-center p-6 sm:p-8 bg-white rounded-lg shadow-lg max-w-md w-full">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4">방이 가득 찼습니다</h2>
+          <p className="mb-4 text-sm sm:text-base">최대 4명까지만 입장 가능합니다.</p>
           <button
             onClick={() => router.push('/')}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm sm:text-base"
+          >
+            메인으로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !isConnected) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+        <div className="text-center p-6 sm:p-8 bg-white rounded-lg shadow-lg max-w-md w-full">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4">연결 오류</h2>
+          <p className="mb-4 text-sm sm:text-base text-red-600">{error}</p>
+          <button
+            onClick={() => router.push('/')}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm sm:text-base"
           >
             메인으로 돌아가기
           </button>
@@ -210,16 +247,16 @@ export default function ChatPage({ params }: ChatPageProps) {
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex ${msg.nickname === nickname ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${msg.userId === userId ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
                     className={`max-w-[70%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 rounded-lg ${
-                      msg.nickname === nickname
+                      msg.userId === userId
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-200 text-gray-800'
                     }`}
                   >
-                    {msg.nickname !== nickname && (
+                    {msg.userId !== userId && (
                       <p className="text-xs font-semibold mb-1 opacity-75">
                         {msg.nickname}
                       </p>
@@ -240,6 +277,11 @@ export default function ChatPage({ params }: ChatPageProps) {
         </div>
 
         <div className="bg-white border-t border-gray-200 p-3 sm:p-4">
+          {error && (
+            <div className="mb-2 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+              {error}
+            </div>
+          )}
           <div className="flex space-x-2">
             <input
               type="text"
