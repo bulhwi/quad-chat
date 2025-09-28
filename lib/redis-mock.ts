@@ -1,12 +1,13 @@
 // 메모리 기반 임시 저장소 (테스트용)
-const memoryStore = new Map<string, any>();
+const memoryStore = new Map<string, unknown>();
 
 export const redis = {
   async get<T>(key: string): Promise<T | null> {
-    return memoryStore.get(key) || null;
+    const value = memoryStore.get(key);
+    return value ? value as T : null;
   },
 
-  async setex(key: string, ttl: number, value: any): Promise<void> {
+  async setex(key: string, ttl: number, value: unknown): Promise<void> {
     memoryStore.set(key, value);
     // TTL은 테스트용이므로 무시
   },

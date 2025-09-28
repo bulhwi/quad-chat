@@ -57,8 +57,8 @@ export async function POST(
         success: true,
         userId,
         room: {
-          users: result.room.users,
-          userCount: result.room.users.length
+          users: result.room?.users || [],
+          userCount: result.room?.users?.length || 0
         }
       });
     } else {
