@@ -5,6 +5,7 @@
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-quad--chat.vercel.app-blue?style=for-the-badge)](https://quad-chat.vercel.app)
 [![Version](https://img.shields.io/badge/Version-v1.0.1-green?style=for-the-badge)](https://github.com/bulhwi/quad-chat/releases/tag/v1.0.1)
 [![Korean Release Notes](https://img.shields.io/badge/한국어%20릴리즈%20노트-자동화-red?style=for-the-badge)](https://github.com/bulhwi/quad-chat/releases)
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/bulhwi/quad-chat/korean-release.yml?style=for-the-badge&label=Korean%20Release)](https://github.com/bulhwi/quad-chat/actions)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fbulhwi%2Fquad-chat)
 
 ## ✨ 주요 기능
