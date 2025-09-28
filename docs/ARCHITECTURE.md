@@ -28,7 +28,7 @@ graph TB
 
     %% API 레이어
     subgraph "🔌 API Layer (Serverless)"
-        APIRoutes[🛤️ API Routes<br/>/api/rooms/[roomId]]
+        APIRoutes[🛤️ API Routes<br/>/api/rooms/:roomId]
         HTTPPolling[🔄 HTTP Polling<br/>1초 간격 실시간]
         CORS[🔐 CORS Handler<br/>Cross-Origin Support]
     end
@@ -150,7 +150,7 @@ sequenceDiagram
 
     Note over U,P: 방 입장 과정
     U->>N: 1. 닉네임 입력 & 방 생성/참여
-    N->>A: 2. POST /api/rooms/[roomId]
+    N->>A: 2. POST /api/rooms/:roomId
     A->>R: 3. 사용자 데이터 저장 (TTL: 24h)
     R-->>A: 4. 방 정보 반환
     A-->>N: 5. 입장 성공 응답
@@ -158,7 +158,7 @@ sequenceDiagram
 
     Note over U,P: 실시간 메시지 송수신
     loop HTTP Polling (1초 간격)
-        N->>A: GET /api/rooms/[roomId]
+        N->>A: GET /api/rooms/:roomId
         A->>R: 방 데이터 조회
         R-->>A: 최신 메시지 & 사용자 목록
         A-->>N: JSON 응답
@@ -166,7 +166,7 @@ sequenceDiagram
     end
 
     U->>N: 메시지 입력 & 전송
-    N->>A: PUT /api/rooms/[roomId]
+    N->>A: PUT /api/rooms/:roomId
     A->>R: 새 메시지 저장
     R-->>A: 저장 완료
     A-->>N: 전송 성공 응답
@@ -225,7 +225,7 @@ sequenceDiagram
 
 ### Layer 4: API & Business Logic
 ```
-🛤️ API Routes (/api/rooms/[roomId])
+🛤️ API Routes (/api/rooms/:roomId)
 🔐 CORS Middleware
 📝 Input Validation
 🔄 HTTP Polling Server
