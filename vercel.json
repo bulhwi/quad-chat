@@ -1,0 +1,12 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["icn1"],
+  "functions": {
+    "pages/api/socket.js": {
+      "maxDuration": 30
+    }
+  }
+}

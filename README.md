@@ -118,21 +118,19 @@ vercel
 vercel --prod
 ```
 
-#### 3️⃣ GitHub Actions 자동 배포 (이미 설정됨)
+#### 3️⃣ Vercel Git 자동 배포 (권장)
 
-프로젝트에는 이미 GitHub Actions 워크플로우가 설정되어 있습니다:
+가장 간단하고 안정적인 방법입니다:
 
-```yaml
-# .github/workflows/deploy.yml
-# main 브랜치에 푸시 시 자동 배포
-```
+1. **Vercel에서 프로젝트 연결**:
+   - Vercel 대시보드에서 "Add New..." → "Project"
+   - GitHub 저장소 `bulhwi/quad-chat` 선택
+   - "Import" 클릭
 
-**설정 방법:**
-1. GitHub 저장소 Settings → Secrets 이동
-2. 다음 시크릿 추가:
-   - `VERCEL_TOKEN`: Vercel 계정 토큰
-   - `VERCEL_ORG_ID`: Vercel 조직 ID
-   - `VERCEL_PROJECT_ID`: Vercel 프로젝트 ID
+2. **자동 배포 설정**:
+   - main 브랜치에 푸시 시 자동 배포
+   - Pull Request 시 프리뷰 배포
+   - 토큰 설정 불필요
 
 ### ⚙️ 배포 환경 설정
 
