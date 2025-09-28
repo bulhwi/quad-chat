@@ -55,7 +55,7 @@ export default function Home() {
   // 6. UI 렌더링 부분
   // ============================================
   return (
-    {/* 6-1. 메인 컨테이너 (전체 화면, 중앙 정렬, 그라데이션 배경) */}
+    // 6-1. 메인 컨테이너 (전체 화면, 중앙 정렬, 그라데이션 배경)
     <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 md:p-24 bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="w-full max-w-md px-4 sm:px-0">
         {/* 6-2. 메인 카드 컨테이너 */}
