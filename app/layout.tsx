@@ -15,13 +15,19 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Quad Talk - 4인 실시간 채팅",
   description: "최대 4명까지 참여 가능한 실시간 채팅 애플리케이션",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
-  themeColor: "#3B82F6",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Quad Talk"
   }
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#3B82F6'
 };
 
 export default function RootLayout({

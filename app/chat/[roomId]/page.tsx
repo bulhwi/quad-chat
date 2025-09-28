@@ -13,7 +13,7 @@ export default function ChatPage({ params }: ChatPageProps) {
   const { roomId } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nickname = searchParams.get('nickname') || 'Anonymous';
+  const nickname = searchParams?.get('nickname') || 'Anonymous';
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
