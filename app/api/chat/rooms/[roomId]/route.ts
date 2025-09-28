@@ -30,7 +30,7 @@ export async function POST(
 ) {
   try {
     const { roomId } = await params;
-    const { nickname, action } = await request.json();
+    const { nickname, action, userId } = await request.json();
 
     if (action === 'join') {
       if (!nickname || nickname.trim() === '') {
@@ -61,6 +61,18 @@ export async function POST(
           userCount: result.room?.users?.length || 0
         }
       });
+    } else if (action === 'leave') {
+      if (!userId) {
+        return NextResponse.json(
+          { error: 'userId is required' },
+          { status: 400 }
+        );
+      }
+
+      // Redis에서 사용자 제거
+      await removeUserFromRoom(roomId, userId);
+
+      return NextResponse.json({ success: true });
     } else {
       return NextResponse.json(
         { error: 'Invalid action' },

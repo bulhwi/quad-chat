@@ -86,10 +86,22 @@ export function useChat({ roomId, nickname }: UseChatProps) {
   }, [roomId, userId, isConnected]);
 
   // 방 나가기 함수
-  const leaveRoom = useCallback(() => {
-    stopPolling();
-    router.push('/');
-  }, [router, stopPolling]);
+  const leaveRoom = useCallback(async () => {
+    try {
+      stopPolling();
+
+      // 서버에 방 퇴장 API 호출
+      if (userId) {
+        await ChatAPI.leaveRoom(roomId, userId);
+      }
+
+      router.push('/');
+    } catch (err) {
+      console.error('방 나가기 실패:', err);
+      // 실패해도 페이지는 이동
+      router.push('/');
+    }
+  }, [router, stopPolling, roomId, userId]);
 
   // 방 코드 복사 함수
   const copyRoomId = useCallback(async () => {
@@ -112,17 +124,37 @@ export function useChat({ roomId, nickname }: UseChatProps) {
     };
   }, [joinRoom, stopPolling]);
 
-  // 페이지 이탈 시 정리
+  // 페이지 이탈 시 정리 및 방 퇴장
   useEffect(() => {
     const handleBeforeUnload = () => {
       stopPolling();
+
+      // 방 퇴장 API 호출 (동기적으로 실행)
+      if (userId) {
+        // navigator.sendBeacon 사용으로 페이지 이탈 시에도 확실히 전송
+        const leaveData = JSON.stringify({ action: 'leave', userId });
+        navigator.sendBeacon(
+          `${process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : 'https://quad-chat.vercel.app'}/api/chat/rooms/${roomId}`,
+          new Blob([leaveData], { type: 'application/json' })
+        );
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      // 탭이 숨겨질 때도 방 퇴장 처리 (모바일에서 앱 전환 등)
+      if (document.hidden && userId) {
+        ChatAPI.leaveRoom(roomId, userId).catch(console.error);
+      }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [stopPolling]);
+  }, [stopPolling, roomId, userId]);
 
   return {
     // 상태
