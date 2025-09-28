@@ -9,21 +9,23 @@
 
 ### 🔗 핵심 기능
 - **4명 제한**: 방당 최대 4명까지만 입장 가능
-- **실시간 채팅**: Socket.io 기반 실시간 메시지 송수신
+- **실시간 채팅**: HTTP Polling 기반 실시간 메시지 송수신
 - **크로스 플랫폼**: PC, 모바일, 태블릿 모든 기기에서 접속 가능
 - **브라우저 호환**: Chrome, Safari, Firefox, Edge 등 모든 브라우저 지원
+- **영구 저장**: Upstash Redis로 안정적인 데이터 보관
 
 ### 🎨 사용자 경험
 - **직관적 UI**: 깔끔하고 사용하기 쉬운 인터페이스
 - **반응형 디자인**: 모바일 최적화된 반응형 레이아웃
 - **실시간 상태**: 연결 상태 및 참여자 수 실시간 표시
-- **메시지 히스토리**: 늦게 참여해도 최근 메시지 확인 가능
+- **메시지 히스토리**: 늦게 참여해도 최근 100개 메시지 확인 가능
+- **자동 정리**: 24시간 후 비활성 방 자동 삭제
 
 ### 📱 모바일 지원
 - **터치 최적화**: 모바일 터치 인터페이스 완전 지원
 - **햄버거 메뉴**: 모바일에서 사이드바 토글 기능
 - **반응형 텍스트**: 화면 크기에 따른 텍스트 크기 자동 조정
-- **안정적 연결**: WebSocket과 Polling 이중 지원으로 안정적 연결
+- **안정적 연결**: HTTP Polling으로 모든 환경에서 안정적 작동
 
 ## 🛠️ 기술 스택
 
@@ -32,17 +34,18 @@
 - **Library**: React 19
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
-- **Real-time**: Socket.io Client
+- **Communication**: HTTP REST API + Polling
 
 ### Backend
-- **Runtime**: Node.js
-- **WebSocket**: Socket.io Server
+- **Runtime**: Node.js (Serverless)
+- **Database**: Upstash Redis (무료)
+- **API**: REST API Routes
 - **Deployment**: Vercel (Serverless)
 
-### DevOps
-- **Version Control**: Git/GitHub
-- **CI/CD**: GitHub Actions
+### Infrastructure
 - **Hosting**: Vercel
+- **Database**: Upstash Redis (Tokyo)
+- **CDN**: Vercel Edge Network
 - **Domain**: vercel.app
 
 ## 로컬 실행 방법
@@ -61,6 +64,112 @@ npm run dev
 # 4. 브라우저에서 접속
 http://localhost:3001
 ```
+
+## 🗃️ Upstash Redis 설정
+
+이 애플리케이션은 **Upstash Redis**를 사용하여 실시간 채팅 데이터를 저장합니다. 배포하기 전에 Redis 데이터베이스를 설정해야 합니다.
+
+### 💎 **Upstash Redis 무료 플랜**
+
+| 항목 | 무료 플랜 제공량 | 비고 |
+|------|------------------|------|
+| **일일 요청 수** | 10,000 requests | 채팅 앱에 충분 |
+| **데이터 크기** | 256MB | 수천 개 방 저장 가능 |
+| **동시 연결** | 제한 없음 | 무제한 사용자 |
+| **데이터 보관** | 영구 보관 | 삭제되지 않음 |
+| **지역** | 전 세계 | Tokyo 리전 사용 권장 |
+
+### 🚀 **5분 설정 가이드**
+
+#### **1단계: Upstash 계정 생성** ⏱️ 2분
+
+1. **https://console.upstash.com** 접속
+2. **"Sign up with GitHub"** 클릭
+3. GitHub 계정으로 무료 회원가입 완료
+
+#### **2단계: Redis 데이터베이스 생성** ⏱️ 1분
+
+1. **"Create Database"** 버튼 클릭
+2. 설정값 입력:
+   ```
+   Name: quad-chat-db
+   Region: Tokyo, Japan (또는 가장 가까운 지역)
+   Type: Regional (기본값)
+   ```
+3. **"Create"** 버튼 클릭
+
+#### **3단계: 연결 정보 복사** ⏱️ 1분
+
+1. 생성된 데이터베이스 **클릭**
+2. **"REST API"** 탭 선택
+3. 다음 2개 값 복사:
+   ```bash
+   UPSTASH_REDIS_REST_URL="https://xxx-xxx-xxx.upstash.io"
+   UPSTASH_REDIS_REST_TOKEN="AXXXxxxxxxxxxxxxxxxxxxxxxxxxx"
+   ```
+
+#### **4단계: Vercel 환경변수 설정** ⏱️ 1분
+
+1. **https://vercel.com/dashboard** 접속
+2. **quad-chat** 프로젝트 클릭
+3. **Settings** → **Environment Variables** 이동
+4. 다음 2개 변수 추가:
+   ```
+   Name: UPSTASH_REDIS_REST_URL
+   Value: [3단계에서 복사한 URL]
+
+   Name: UPSTASH_REDIS_REST_TOKEN
+   Value: [3단계에서 복사한 토큰]
+   ```
+5. **"Save"** 클릭
+
+### 🔧 **로컬 개발 설정**
+
+로컬에서 개발하려면 `.env.local` 파일을 생성하세요:
+
+```bash
+# .env.local 파일 생성
+UPSTASH_REDIS_REST_URL=your_redis_url_here
+UPSTASH_REDIS_REST_TOKEN=your_redis_token_here
+```
+
+### 📊 **Redis 사용량 모니터링**
+
+- **Upstash 콘솔**에서 실시간 사용량 확인 가능
+- **Metrics** 탭에서 요청 수, 저장 용량 등 확인
+- 무료 한도 초과 시 자동 알림
+
+### 🔍 **데이터 구조**
+
+```json
+{
+  "room:abc123": {
+    "users": [
+      {
+        "id": "user_123",
+        "nickname": "사용자1",
+        "joinedAt": "2024-01-01T00:00:00Z"
+      }
+    ],
+    "messages": [
+      {
+        "id": "msg_123",
+        "userId": "user_123",
+        "nickname": "사용자1",
+        "message": "안녕하세요!",
+        "timestamp": "2024-01-01T00:00:00Z"
+      }
+    ]
+  }
+}
+```
+
+### ⚠️ **주의사항**
+
+- **무료 플랜** 일일 10,000 요청 제한 (충분함)
+- **TTL 24시간** 설정으로 자동 방 정리
+- **Tokyo 리전** 사용 시 한국에서 빠른 속도
+- **HTTPS만 지원** (HTTP는 불가)
 
 ## 🚀 배포 방법
 
@@ -139,10 +248,11 @@ vercel --prod
 - **빌드 명령어**: `npm run build`
 - **시작 명령어**: `npm start`
 
-#### 환경변수 (선택사항)
+#### 환경변수 (필수)
 | 변수명 | 설명 | 기본값 |
 |--------|------|--------|
-| `NEXT_PUBLIC_SERVER_URL` | WebSocket 서버 URL | 자동 감지 |
+| `UPSTASH_REDIS_REST_URL` | Redis 연결 URL | **필수 설정** |
+| `UPSTASH_REDIS_REST_TOKEN` | Redis 인증 토큰 | **필수 설정** |
 | `NODE_ENV` | 환경 모드 | `production` |
 
 #### Vercel 최적화 설정
@@ -160,22 +270,23 @@ vercel --prod
 
 #### 로컬 개발 환경
 ```
-브라우저 ←→ Next.js Dev Server (3001) ←→ Custom Server (Socket.io)
+브라우저 ←→ Next.js Dev Server (3001) ←→ REST API Routes ←→ Upstash Redis
 ```
 
 #### 프로덕션 환경 (Vercel)
 ```
-브라우저 ←→ Vercel Edge ←→ Next.js App ←→ API Routes (/api/socket)
-                ↓
-            Socket.io Serverless
+브라우저 ←→ Vercel Edge ←→ Next.js App ←→ API Routes (/api/rooms/[roomId])
+                                                    ↓
+                                              Upstash Redis (Tokyo)
 ```
 
 ### 🚨 배포 주의사항
 
-1. **Socket.io 설정**: Vercel은 서버리스 환경이므로 커스텀 서버 대신 API Routes 사용
-2. **CORS 설정**: 모든 오리진 허용으로 설정됨 (`origin: "*"`)
-3. **세션 저장소**: 메모리 기반이므로 서버 재시작 시 방 정보 초기화
-4. **스케일링**: 서버리스 특성상 각 함수는 독립적으로 실행
+1. **Redis 설정**: Upstash Redis 환경변수 필수 설정 (URL, TOKEN)
+2. **CORS 설정**: 모든 오리진 허용으로 설정됨 (`Access-Control-Allow-Origin: *`)
+3. **데이터 저장소**: Upstash Redis 기반 영구 저장 (24시간 TTL)
+4. **스케일링**: 서버리스 특성상 Redis로 상태 공유
+5. **요청 제한**: 무료 플랜 일일 10,000 요청 한도
 
 ### 📊 배포 후 확인사항
 
@@ -190,8 +301,9 @@ vercel --prod
 
 #### 🔍 디버깅 도구
 - **Vercel 로그**: Vercel 대시보드에서 함수 로그 확인
-- **브라우저 콘솔**: Socket.io 연결 상태 확인
-- **Network 탭**: WebSocket 연결 모니터링
+- **브라우저 콘솔**: HTTP 요청/응답 상태 확인
+- **Network 탭**: REST API 호출 모니터링
+- **Upstash 콘솔**: Redis 데이터 및 사용량 확인
 
 ## 📖 사용 방법
 
@@ -230,13 +342,14 @@ quad-chat/
 │   ├── 📄 globals.css             # 글로벌 스타일
 │   ├── 📁 chat/[roomId]/          # 동적 채팅방 라우트
 │   │   └── 📄 page.tsx           # 채팅방 페이지
-│   └── 📁 hooks/                  # React 커스텀 훅
-│       └── 📄 useSocket.ts       # Socket.io 훅
 ├── 📁 pages/                      # Pages Router (API 전용)
 │   └── 📁 api/
-│       └── 📄 socket.js          # Socket.io 서버 (Vercel 호환)
+│       └── 📁 rooms/
+│           └── 📄 [roomId].js    # REST API 라우트 (Redis 연동)
 ├── 📁 lib/                        # 유틸리티 라이브러리
-│   └── 📄 socket.ts              # Socket.io 클라이언트 설정
+│   ├── 📄 redis.ts               # Redis 연결 및 데이터 관리
+│   ├── 📄 api.ts                 # HTTP 클라이언트
+│   └── 📄 socket.ts              # Socket.io (로컬 개발용)
 ├── 📁 types/                      # TypeScript 타입 정의
 │   ├── 📄 chat.ts                # 채팅 관련 타입
 │   └── 📄 socket.ts              # Socket.io 타입
@@ -254,10 +367,11 @@ quad-chat/
 | 파일 | 역할 |
 |------|------|
 | `app/page.tsx` | 메인 페이지: 닉네임 입력, 방 생성/참여 |
-| `app/chat/[roomId]/page.tsx` | 채팅방: 실시간 채팅 인터페이스 |
-| `pages/api/socket.js` | Socket.io 서버: Vercel serverless 환경 |
-| `lib/socket.ts` | Socket.io 클라이언트: 연결 관리 |
-| `server.js` | 로컬 개발 서버: Socket.io + Next.js |
+| `app/chat/[roomId]/page.tsx` | 채팅방: HTTP Polling 기반 실시간 채팅 |
+| `pages/api/rooms/[roomId].js` | REST API: 방 관리, 메시지 송수신 |
+| `lib/redis.ts` | Redis 연결: 데이터 저장/조회 관리 |
+| `lib/api.ts` | HTTP 클라이언트: API 호출 관리 |
+| `server.js` | 로컬 개발 서버: Socket.io + Next.js (로컬용) |
 
 ## 🛠️ 개발 스크립트
 
@@ -329,7 +443,9 @@ git push origin main
 - [Vercel 배포 가이드](https://vercel.com/docs)
 
 ### 🆘 문제 해결
-- **연결 문제**: 브라우저 콘솔에서 Socket.io 연결 상태 확인
+- **연결 문제**: 브라우저 콘솔에서 HTTP 요청 상태 확인
+- **Redis 오류**: Upstash 콘솔에서 연결 상태 및 사용량 확인
+- **환경변수 오류**: Vercel 대시보드에서 환경변수 설정 확인
 - **모바일 이슈**: 다른 브라우저(Safari, Chrome)에서 테스트
 - **배포 문제**: Vercel 대시보드에서 빌드 로그 확인
 

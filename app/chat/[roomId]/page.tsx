@@ -1,128 +1,164 @@
 'use client';
 
+// 1. 필요한 React 훅과 Next.js 모듈 가져오기
 import { useEffect, useState, useRef, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ChatAPI, Room } from '@/lib/api';
 
+// 2. 페이지 컴포넌트 props 타입 정의
 interface ChatPageProps {
-  params: Promise<{ roomId: string }>;
+  params: Promise<{ roomId: string }>; // 동적 라우트에서 roomId 파라미터
 }
 
+// 3. 채팅 페이지 메인 컴포넌트
 export default function ChatPage({ params }: ChatPageProps) {
-  const { roomId } = use(params);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const nickname = searchParams?.get('nickname') || 'Anonymous';
+  // 3-1. URL 파라미터 및 라우터 관련 훅
+  const { roomId } = use(params);                                    // 방 ID 추출
+  const router = useRouter();                                        // 페이지 이동용
+  const searchParams = useSearchParams();                           // URL 쿼리 파라미터
+  const nickname = searchParams?.get('nickname') || 'Anonymous';    // 닉네임 (없으면 Anonymous)
 
-  const [messages, setMessages] = useState<Room['messages']>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [users, setUsers] = useState<Room['users']>([]);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isRoomFull, setIsRoomFull] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [userId, setUserId] = useState<string>('');
-  const [error, setError] = useState<string>('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  // 3-2. 채팅 관련 상태 관리
+  const [messages, setMessages] = useState<Room['messages']>([]);   // 메시지 목록
+  const [inputMessage, setInputMessage] = useState('');             // 입력 중인 메시지
+  const [users, setUsers] = useState<Room['users']>([]);            // 방 사용자 목록
+  const [isConnected, setIsConnected] = useState(false);            // 연결 상태
+  const [isRoomFull, setIsRoomFull] = useState(false);              // 방 만실 상태
+  const [showSidebar, setShowSidebar] = useState(false);            // 사이드바 표시 여부
+  const [userId, setUserId] = useState<string>('');                 // 현재 사용자 ID
+  const [error, setError] = useState<string>('');                   // 에러 메시지
 
-  // Join room on mount
+  // 3-3. 참조(ref) 객체들
+  const messagesEndRef = useRef<HTMLDivElement>(null);              // 메시지 스크롤용
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);   // 폴링 인터벌 관리
+
+  // 4. 방 입장 처리 (컴포넌트 마운트 시 실행)
   useEffect(() => {
+    // 4-1. 방 입장 함수 정의
     const joinRoom = async () => {
       try {
+        // 4-1-1. API 호출하여 방에 입장 시도
         const response = await ChatAPI.joinRoom(roomId, nickname);
-        setUserId(response.userId);
-        setUsers(response.room.users);
-        setIsConnected(true);
-        setError('');
 
-        // Start polling for updates
+        // 4-1-2. 성공 시 상태 업데이트
+        setUserId(response.userId);        // 서버에서 받은 사용자 ID 저장
+        setUsers(response.room.users);     // 방의 현재 사용자 목록 저장
+        setIsConnected(true);              // 연결 상태를 true로 설정
+        setError('');                      // 에러 메시지 초기화
+
+        // 4-1-3. 실시간 업데이트를 위한 폴링 시작
         startPolling();
       } catch (error: unknown) {
+        // 4-1-4. 에러 처리
         console.error('Failed to join room:', error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
         if (errorMessage.includes('full')) {
-          setIsRoomFull(true);
+          setIsRoomFull(true);             // 방이 꽉 찬 경우
         } else {
-          setError(errorMessage);
+          setError(errorMessage);          // 기타 에러
         }
       }
     };
 
+    // 4-2. 방 입장 함수 실행
     joinRoom();
 
+    // 4-3. 컴포넌트 언마운트 시 정리 작업
     return () => {
       if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
+        clearInterval(pollingIntervalRef.current); // 폴링 인터벌 정리
       }
     };
-  }, [roomId, nickname]);
+  }, [roomId, nickname]); // roomId나 nickname이 변경되면 재실행
 
-  // Cleanup when component unmounts
+  // 5. 컴포넌트 언마운트 시 방 나가기 처리
   useEffect(() => {
     return () => {
+      // 5-1. 사용자 ID가 있으면 방에서 나가기 API 호출
       if (userId) {
         ChatAPI.leaveRoom(roomId, userId).catch(console.error);
       }
     };
-  }, [userId, roomId]);
+  }, [userId, roomId]); // userId나 roomId가 변경되면 재실행
 
+  // 6. HTTP 폴링 시작 함수
+  // - WebSocket 대신 HTTP 요청으로 실시간 업데이트 구현
   const startPolling = () => {
-    // Poll for room updates every 1 second
+    // 6-1. 1초마다 방 데이터를 조회하는 인터벌 설정
     pollingIntervalRef.current = setInterval(async () => {
       try {
+        // 6-1-1. 서버에서 최신 방 데이터 가져오기
         const roomData = await ChatAPI.getRoomData(roomId);
-        setUsers(roomData.users);
-        setMessages(roomData.messages);
-        setIsConnected(true);
+        setUsers(roomData.users);           // 사용자 목록 업데이트
+        setMessages(roomData.messages);     // 메시지 목록 업데이트
+        setIsConnected(true);               // 연결 상태 유지
       } catch (error) {
+        // 6-1-2. 폴링 에러 시 연결 끊김으로 표시
         console.error('Polling error:', error);
         setIsConnected(false);
       }
-    }, 1000);
+    }, 1000); // 1초 간격
   };
 
+  // 7. 메시지 목록이 변경될 때마다 스크롤 최하단으로 이동
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages]); // messages 배열이 변경될 때마다 실행
 
+  // 8. 메시지 전송 함수
   const sendMessage = async () => {
+    // 8-1. 입력값 검증 (빈 메시지나 사용자 ID 없으면 실행 안함)
     if (!inputMessage.trim() || !userId) return;
 
     try {
+      // 8-2. 서버에 메시지 전송
       await ChatAPI.sendMessage(roomId, userId, inputMessage);
-      setInputMessage('');
-      setError('');
+      setInputMessage('');                // 입력창 초기화
+      setError('');                       // 에러 메시지 초기화
 
-      // Immediately fetch latest messages
+      // 8-3. 즉시 최신 메시지 목록을 가져와서 UI 업데이트
       const roomData = await ChatAPI.getRoomData(roomId);
       setMessages(roomData.messages);
     } catch (error: unknown) {
+      // 8-4. 전송 실패 시 에러 처리
       console.error('Failed to send message:', error);
       setError('메시지 전송에 실패했습니다.');
     }
   };
 
+  // 9. 키보드 이벤트 처리 함수
   const handleKeyPress = (e: React.KeyboardEvent) => {
+    // 9-1. Enter 키 누르면 메시지 전송 (Shift+Enter는 제외)
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+      e.preventDefault();  // 기본 Enter 동작(줄바꿈) 방지
+      sendMessage();       // 메시지 전송
     }
   };
 
+  // 10. 방 코드 복사 함수
   const copyRoomId = () => {
+    // 10-1. 클립보드에 방 ID 복사
     navigator.clipboard.writeText(roomId);
     alert(`방 코드 '${roomId}'가 복사되었습니다!`);
   };
 
+  // 11. 방 나가기 함수
   const leaveRoom = async () => {
+    // 11-1. 사용자 확인 후 방 나가기 처리
     if (confirm('방을 나가시겠습니까?')) {
       if (userId) {
-        await ChatAPI.leaveRoom(roomId, userId);
+        await ChatAPI.leaveRoom(roomId, userId); // 서버에 나가기 요청
       }
-      router.push('/');
+      router.push('/'); // 메인 페이지로 이동
     }
   };
 
+  // ============================================
+  // 12. UI 렌더링 부분
+  // ============================================
+
+  // 12-1. 방이 가득 찬 경우 화면
   if (isRoomFull) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
@@ -140,6 +176,7 @@ export default function ChatPage({ params }: ChatPageProps) {
     );
   }
 
+  // 12-2. 연결 오류 화면
   if (error && !isConnected) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
@@ -157,9 +194,10 @@ export default function ChatPage({ params }: ChatPageProps) {
     );
   }
 
+  // 12-3. 메인 채팅 화면 렌더링
   return (
     <div className="flex h-screen bg-gray-50 relative">
-      {/* Mobile menu button */}
+      {/* 12-3-1. 모바일 햄버거 메뉴 버튼 */}
       <button
         onClick={() => setShowSidebar(!showSidebar)}
         className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md"
