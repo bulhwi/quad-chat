@@ -35,13 +35,13 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">
+    <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 md:p-24 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="w-full max-w-md px-4 sm:px-0">
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-gray-800">
             Quad Talk
           </h1>
-          <p className="text-center text-gray-600 mb-8">
+          <p className="text-sm sm:text-base text-center text-gray-600 mb-6 sm:mb-8">
             최대 4명까지 참여 가능한 실시간 채팅
           </p>
 

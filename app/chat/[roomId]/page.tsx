@@ -20,6 +20,7 @@ export default function ChatPage({ params }: ChatPageProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [isRoomFull, setIsRoomFull] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<ReturnType<typeof getSocket> | null>(null);
 
@@ -115,9 +116,32 @@ export default function ChatPage({ params }: ChatPageProps) {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <div className="w-64 bg-white border-r border-gray-200 p-4">
-        <div className="mb-6">
+    <div className="flex h-screen bg-gray-50 relative">
+      {/* Mobile menu button */}
+      <button
+        onClick={() => setShowSidebar(!showSidebar)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {showSidebar ? (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          ) : (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          )}
+        </svg>
+      </button>
+
+      {/* Overlay for mobile */}
+      {showSidebar && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
+          onClick={() => setShowSidebar(false)}
+        />
+      )}
+
+      {/* Sidebar - desktop and mobile */}
+      <div className={`fixed lg:relative lg:block ${showSidebar ? 'block' : 'hidden'} w-64 h-full bg-white border-r border-gray-200 p-4 z-40 lg:z-0`}>
+        <div className="mb-6 mt-14 lg:mt-0">
           <h2 className="text-lg font-semibold text-gray-800 mb-2">방 정보</h2>
           <div className="bg-gray-100 p-3 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">방 코드</p>
@@ -166,12 +190,12 @@ export default function ChatPage({ params }: ChatPageProps) {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col">
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <h1 className="text-xl font-bold text-gray-800">Quad Talk</h1>
+      <div className="flex-1 flex flex-col w-full">
+        <div className="bg-white border-b border-gray-200 px-6 py-4 pl-16 lg:pl-6">
+          <h1 className="text-lg sm:text-xl font-bold text-gray-800">Quad Talk</h1>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6">
           {messages.length === 0 ? (
             <div className="text-center text-gray-500 mt-8">
               아직 메시지가 없습니다. 대화를 시작해보세요!
@@ -184,7 +208,7 @@ export default function ChatPage({ params }: ChatPageProps) {
                   className={`flex ${msg.nickname === nickname ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    className={`max-w-[70%] sm:max-w-xs lg:max-w-md px-3 sm:px-4 py-2 rounded-lg ${
                       msg.nickname === nickname
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-200 text-gray-800'
@@ -210,7 +234,7 @@ export default function ChatPage({ params }: ChatPageProps) {
           )}
         </div>
 
-        <div className="bg-white border-t border-gray-200 p-4">
+        <div className="bg-white border-t border-gray-200 p-3 sm:p-4">
           <div className="flex space-x-2">
             <input
               type="text"
@@ -224,7 +248,7 @@ export default function ChatPage({ params }: ChatPageProps) {
             <button
               onClick={sendMessage}
               disabled={!isConnected || !inputMessage.trim()}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
             >
               전송
             </button>

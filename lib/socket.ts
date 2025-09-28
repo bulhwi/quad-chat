@@ -4,8 +4,14 @@ let socket: Socket | null = null;
 
 export const initSocket = () => {
   if (!socket) {
-    socket = io(process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001', {
-      autoConnect: false
+    const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL ||
+      (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001');
+
+    socket = io(serverUrl, {
+      autoConnect: false,
+      transports: ['websocket', 'polling'],
+      timeout: 20000,
+      forceNew: true
     });
   }
   return socket;
