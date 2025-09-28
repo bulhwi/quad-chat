@@ -2,6 +2,9 @@
   "name": "quad-chat",
   "version": "0.1.0",
   "private": true,
+  "description": "실시간 4인 채팅 애플리케이션 - Redis 기반 HTTP Polling 방식",
+  "author": "bulhwi",
+  "license": "MIT",
   "scripts": {
     "dev": "node server.js",
     "dev:next": "next dev",
