@@ -560,10 +560,13 @@ cat release-notes-ko.md
 
 ### 🤝 기여 방법
 1. 이 저장소를 포크
-2. 새 브랜치 생성 (`git checkout -b feature/amazing-feature`)
+2. develop 브랜치에서 새 기능 브랜치 생성 (`git checkout -b feature/amazing-feature`)
 3. 변경사항 커밋 (`git commit -m 'Add some amazing feature'`)
 4. 브랜치에 푸시 (`git push origin feature/amazing-feature`)
-5. Pull Request 생성
+5. develop 브랜치로 Pull Request 생성
+6. 코드 리뷰 및 승인 후 머지
+
+**🔒 브랜치 보호 규칙**: main 및 develop 브랜치는 PR을 통해서만 변경 가능하며, 모든 PR은 리뷰 승인이 필요합니다.
 
 ## 📄 라이선스
 
