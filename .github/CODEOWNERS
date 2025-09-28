@@ -1,0 +1,23 @@
+# 🔒 Quad Chat 코드 소유자 설정
+#
+# 이 파일은 PR 리뷰 시 자동으로 리뷰어를 지정하고
+# 코드 소유자 승인 규칙을 관리합니다.
+#
+# GitHub Free 플랜에서는 자체 승인이 제한되므로
+# 현재는 CODEOWNERS 규칙을 비활성화합니다.
+
+# 전체 프로젝트 소유자 (임시 비활성화)
+# * @bulhwi
+
+# 특정 폴더별 소유자 (임시 비활성화)
+# /.github/ @bulhwi
+# /scripts/ @bulhwi
+# /docs/ @bulhwi
+
+# 핵심 설정 파일들 (임시 비활성화)
+# package.json @bulhwi
+# CHANGELOG.md @bulhwi
+# README.md @bulhwi
+
+# 브랜치 보호 관련 파일 (임시 비활성화)
+# .github/workflows/ @bulhwi
