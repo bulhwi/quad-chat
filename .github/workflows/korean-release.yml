@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+  pull-requests: read
+
 jobs:
   korean-release:
     name: 한국어 릴리즈 노트 생성 및 배포
@@ -38,15 +42,13 @@ jobs:
           node scripts/generate-korean-release.js ${{ steps.tag.outputs.tag }}
 
       - name: 🚀 GitHub 릴리즈 생성
-        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          release_name: 🚀 Quad Chat ${{ steps.tag.outputs.tag }}
-          body_path: ./release-notes-ko.md
-          draft: false
-          prerelease: false
+        run: |
+          gh release create ${{ steps.tag.outputs.tag }} \
+            --title "🚀 Quad Chat ${{ steps.tag.outputs.tag }}" \
+            --notes-file ./release-notes-ko.md \
+            --repo bulhwi/quad-chat
 
       - name: 📢 슬랙 알림 (선택사항)
         if: success()
